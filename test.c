@@ -4,14 +4,20 @@
 #include <string.h>
 
 typedef struct codes {
-    int8_t code;
+    uint8_t code;
     uint8_t len;
 } Codes;
+
+typedef struct tree {
+    uint64_t weight;
+    uint8_t symbol;
+    struct tree* left;
+    struct tree* right;
+} Tree;
 
 typedef struct queue {
     uint64_t weight;
     uint8_t symbol;
-    struct queue* next;
 } Queue;
 
 enum letters {
@@ -134,7 +140,7 @@ Codes* clear(Codes* tmp, uint8_t value)
     for (int i = 0; i < 26; i++) {
         tmp_value = value << (tmp[i].len - value_len);
         if (tmp[i].code < tmp_value)
-            tmp[i].code = -1;
+            tmp[i].len = 0;
     }
     return tmp;
 }
@@ -149,7 +155,7 @@ _Bool find_code(Codes* tmp, uint8_t value, uint8_t s)
 _Bool empty_codes(Codes* tmp)
 {
     for (int i = 0; i < 26; i++)
-        if (tmp[i].code != -1)
+        if (tmp[i].len != 0)
             return 0;
     return 1;
 }
@@ -182,24 +188,43 @@ uint8_t* DECODE_MSG(uint8_t* C, Codes* a)
     return T;
 }
 
-uint64_t queue_len(Queue* T)
-{
-    uint64_t count = 1;
-    while(T->next != NULL) {
-        T = T->next;
-        count++;
-    }
-    return count;
-}
+// uint64_t queue_len(Queue* symbols)
+// {
+//     uint64_t count = 1;
+//     while(symbols->next != NULL) {
+//         T = T->next;
+//         count++;
+//     }
+//     return count;
+// }
 
-Heap* init_queue(Queue* T)
+Heap* init_queue(Queue* symbols)
 {
-    Heap* h = heap_create(queue_len(T));
-    while(T != NULL) {
-        heap_insert(h, T->weight, T->symbol);
-        T = T->next;
+    Heap* h = heap_create(26);
+    for(int i = 0; i < 26; i++) {
+        if(symbols[i].weight == 0)
+            continue;
+        heap_insert(h, symbols[i].weight, symbols[i].symbol);
     }
     return h;
 }
 
-void HTREE()
+Tree* init_node(Tree* node, uint64_t weight, uint8_t symbol)
+{
+    node = malloc(sizeof(Tree));
+    node->weight = weight;
+    node->symbol = symbol;
+    node->left = NULL;
+    node->right = NULL;
+    return node;
+}
+
+void HTREE(Queue* symbols)
+{
+    Heap* h = init_queue(symbols);
+    Tree* w1 = NULL;
+    Tree* w2 = NULL;
+    while(h->nnodes > 1) {
+
+    }
+}
