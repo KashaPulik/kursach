@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 typedef struct heapnode {
     uint64_t freq;
@@ -17,6 +18,7 @@ typedef struct heap {
 } Heap;
 
 Heap* heap_create(int maxsize);
+int heap_nnodes(Heap* h);
 void heap_free(Heap* h);
 void heap_swap(struct heapnode* a, struct heapnode* b);
 struct heapnode* heap_min(Heap* h);

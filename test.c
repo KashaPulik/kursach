@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 typedef struct codes {
     uint8_t code;
@@ -87,13 +89,23 @@ uint64_t setbits(uint8_t* C, uint64_t offs, uint8_t value, uint8_t value_len)
     return offs + value_len;
 }
 
-uint8_t* ENCODE_MSG(uint8_t* T, Codes* a, size_t len_t)
+size_t new_file_size(Codes* a, uint8_t* T)
+{
+    size_t count = 0;
+    while (*T != '\0') {
+        count += a[get_letter_index(*T)].len;
+        T++;
+    }
+    return count/8 + 61;
+}
+
+uint8_t* ENCODE_MSG(uint8_t* T, Codes* a)
 {
     uint64_t offs = 0; // Смещение в битовом массиве
-    uint8_t* C = malloc(2048); // Битовый массив
+    uint8_t* C = malloc(new_file_size(a, T)); // Битовый массив
     uint8_t value; // Значение, которое записывается в битовый массив
     uint8_t value_len; // Длина значения в битах
-    for (int i = 0; i < len_t; i++) { // Цикл для каждой буквы из сообщения
+    for (int i = 0; T[i] != '\0'; i++) { // Цикл для каждой буквы из сообщения
         value = a[get_letter_index(T[i])].code;
         value_len = a[get_letter_index(T[i])].len;
         offs = setbits(
@@ -117,7 +129,7 @@ uint8_t getbits(uint8_t* array, uint64_t offs, uint8_t len)
             = offs / 8; // Номер байта в который будет происходить запись
     uint8_t byte_offs = offs % 8; // Смещение внутри этого байта
     uint8_t mask = 0x80 >> byte_offs;
-    if (array[byte_n] & mask == 0)
+    if (array[byte_n] & (mask == 0))
         return 0;
     else
         return 1;
@@ -163,9 +175,8 @@ _Bool empty_codes(Codes* tmp)
 uint8_t* DECODE_MSG(uint8_t* C, Codes* a)
 {
     char letter[2] = {0};
-    uint64_t offs = 0;
     uint8_t* T = malloc(2048);
-    size_t n = strlen(C);
+    size_t n = strlen((char*)C);
     Codes tmp[26];
     copy_codes(tmp, a);
     uint8_t value = 0;
@@ -175,7 +186,7 @@ uint8_t* DECODE_MSG(uint8_t* C, Codes* a)
         for (uint8_t s = 0; s < 26; s++) {
             if (find_code(tmp, value, s)) {
                 letter[0] = s;
-                T = strcat(T, letter);
+                T = (uint8_t*)strcat((char*)T, letter);
                 copy_codes(tmp, a);
                 value = 0;
             }
@@ -202,29 +213,20 @@ Heap* init_queue(Queue* symbols)
 {
     Heap* h = heap_create(26);
     for(int i = 0; i < 26; i++) {
-        if(symbols[i].weight == 0)
-            continue;
         heap_insert(h, symbols[i].weight, symbols[i].symbol, NULL, NULL);
     }
     return h;
 }
 
-Tree* init_node(Tree* node, uint64_t weight, uint8_t symbol)
-{
-    node = malloc(sizeof(Tree));
-    node->weight = weight;
-    node->symbol = symbol;
-    node->left = NULL;
-    node->right = NULL;
-    return node;
-}
-
 Node HTREE(Queue* symbols)
 {
     Heap* h = init_queue(symbols);
-    Node w1, w2;
+    Node w1 = {0, 0, NULL, NULL};
+    Node w2 = {0, 0, NULL, NULL};
     while(heap_nnodes(h) > 1) {
         w1 = heap_extract_min(h);
+        if(w1.freq == 0)
+            continue;
         w2 = heap_extract_min(h);
         heap_insert(h, w1.freq + w2.freq, 0, &w1, &w2);
     }
@@ -239,8 +241,10 @@ Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, _Bool key)
             code = code | 0;
         else
             code = code | 1;
-        traverse_tree(a, tree, code, 0);
-        traverse_tree(a, tree, code, 1);
+        Node* buf = tree->left;
+        traverse_tree(a, buf, code, 0);
+        buf = tree->right;
+        traverse_tree(a, buf, code, 1);
     }
     else {
         a[get_letter_index(tree->symbol)].code = code;
@@ -248,3 +252,65 @@ Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, _Bool key)
     return a;
 }
 
+off_t fsize(const char *filename) {
+    struct stat st; 
+
+    if (stat(filename, &st) == 0)
+        return st.st_size;
+
+    return -1; 
+}
+
+uint8_t* read_file(char* filename)
+{
+    FILE* file = fopen(filename, "rb");
+    if(file == NULL) {
+        printf("Не удалось открыть файл\n");
+        exit(1);
+    }
+    off_t filesize = fsize(filename);
+    uint8_t* buf = malloc(filesize + 1);
+    fread(buf, 1, filesize, file);
+    fclose(file);
+    return buf;
+}
+
+Queue* get_freq(Queue* symbols, uint8_t* uncompressed)
+{
+    for(int i = 0; i < 26; i++) {
+        symbols[i].symbol = get_letter(i);
+        symbols[i].weight = 0;
+    }
+
+    for(int i = 0; uncompressed[i] != '\0'; i++)
+        symbols[get_letter_index(uncompressed[i])].weight++;
+    
+    return symbols;
+}
+
+void write_file(char* filename, uint8_t* C, Codes* a)
+{
+    FILE* file = fopen(filename, "wb");
+    if(file == NULL) {
+        printf("Не удалось открыть файл\n");
+        exit(1);
+    }
+    for(int i = 0; i < 26; i++) {
+        fwrite(&a[i].code, 1, 1, file);
+        fwrite(&a[i].len, 1, 1, file);
+    }
+    for(int i = 0; C[i] != '\0'; i++)
+        fwrite(&C[i], 1, 1, file);
+}
+
+int main(int argc, char *argv[])
+{
+    uint8_t* uncompressed = read_file(argv[1]);
+    Queue symbols[26];
+    get_freq(symbols, uncompressed);
+    Node h_tree = HTREE(symbols);
+    Codes a[26];
+    traverse_tree(a, &h_tree, 0, 0);
+    uint8_t* C = ENCODE_MSG(uncompressed, a);
+    write_file(argv[2], C, a);
+}
