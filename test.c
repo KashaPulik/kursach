@@ -230,3 +230,21 @@ Node HTREE(Queue* symbols)
     }
     return heap_extract_min(h);
 }
+
+Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, _Bool key)
+{
+    if(tree->left && tree->right) {
+        code = code << 1;
+        if(key == 0)
+            code = code | 0;
+        else
+            code = code | 1;
+        traverse_tree(a, tree, code, 0);
+        traverse_tree(a, tree, code, 1);
+    }
+    else {
+        a[get_letter_index(tree->symbol)].code = code;
+    }
+    return a;
+}
+
