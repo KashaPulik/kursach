@@ -1,4 +1,6 @@
 #include "./minheap.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 Heap* heap_create(int maxsize)
 {
@@ -14,6 +16,11 @@ Heap* heap_create(int maxsize)
         }
     }
     return h;
+}
+
+int heap_nnodes(Heap* h)
+{
+    return h->nnodes;
 }
 
 void heap_free(Heap* h)
@@ -36,16 +43,19 @@ struct heapnode* heap_min(Heap* h)
     return &h->nodes[1];
 }
 
-int heap_insert(Heap* h, int key, int value)
+int heap_insert(Heap* h, uint64_t freq, uint8_t symbol, Node* left, Node* right)
 {
     if (h->nnodes >= h->maxsize)
         return -1;
 
     h->nnodes++;
-    h->nodes[h->nnodes].key = key;
-    h->nodes[h->nnodes].value = value;
+    h->nodes[h->nnodes].freq = freq;
+    h->nodes[h->nnodes].symbol = symbol;
+    h->nodes[h->nnodes].left = left;
+    h->nodes[h->nnodes].right = right;
 
-    for (int i = h->nnodes; (i > 1) && (h->nodes[i].key < h->nodes[i / 2].key);
+    for (int i = h->nnodes;
+         (i > 1) && (h->nodes[i].freq < h->nodes[i / 2].freq);
          i = i / 2)
         heap_swap(&h->nodes[i], &h->nodes[i / 2]);
     return 0;
@@ -57,10 +67,11 @@ void heap_heapify(Heap* h, int index)
         int left = 2 * index;
         int right = 2 * index + 1;
         int minimal = index;
-        if ((left <= h->nnodes) && (h->nodes[left].key < h->nodes[minimal].key))
+        if ((left <= h->nnodes)
+            && (h->nodes[left].freq < h->nodes[minimal].freq))
             minimal = left;
         if ((right <= h->nnodes)
-            && (h->nodes[right].key < h->nodes[minimal].key))
+            && (h->nodes[right].freq < h->nodes[minimal].freq))
             minimal = right;
         if (minimal == index)
             break;
@@ -72,21 +83,22 @@ void heap_heapify(Heap* h, int index)
 struct heapnode heap_extract_min(Heap* h)
 {
     if (h->nnodes == 0)
-        return (struct heapnode){0, 0};
+        return (struct heapnode){0, 0, NULL, NULL};
 
     struct heapnode minnode = h->nodes[1];
     h->nodes[1] = h->nodes[h->nnodes--];
+    heap_heapify(h, 1);
 
     return minnode;
 }
 
-int heap_decrease_key(Heap* h, int index, int newkey)
+int heap_decrease_freq(Heap* h, int index, int newfreq)
 {
-    if (h->nodes[index].key <= newkey)
+    if (h->nodes[index].freq <= newfreq)
         return -1;
 
-    h->nodes[index].key = newkey;
-    while (index > 1 && h->nodes[index].key < h->nodes[index / 2].key) {
+    h->nodes[index].freq = newfreq;
+    while (index > 1 && h->nodes[index].freq < h->nodes[index / 2].freq) {
         heap_swap(&h->nodes[index], &h->nodes[index / 2]);
         index /= 2;
     }

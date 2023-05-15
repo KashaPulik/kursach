@@ -204,7 +204,7 @@ Heap* init_queue(Queue* symbols)
     for(int i = 0; i < 26; i++) {
         if(symbols[i].weight == 0)
             continue;
-        heap_insert(h, symbols[i].weight, symbols[i].symbol);
+        heap_insert(h, symbols[i].weight, symbols[i].symbol, NULL, NULL);
     }
     return h;
 }
@@ -219,12 +219,32 @@ Tree* init_node(Tree* node, uint64_t weight, uint8_t symbol)
     return node;
 }
 
-void HTREE(Queue* symbols)
+Node HTREE(Queue* symbols)
 {
     Heap* h = init_queue(symbols);
-    Tree* w1 = NULL;
-    Tree* w2 = NULL;
-    while(h->nnodes > 1) {
-
+    Node w1, w2;
+    while(heap_nnodes(h) > 1) {
+        w1 = heap_extract_min(h);
+        w2 = heap_extract_min(h);
+        heap_insert(h, w1.freq + w2.freq, 0, &w1, &w2);
     }
+    return heap_extract_min(h);
 }
+
+Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, _Bool key)
+{
+    if(tree->left && tree->right) {
+        code = code << 1;
+        if(key == 0)
+            code = code | 0;
+        else
+            code = code | 1;
+        traverse_tree(a, tree, code, 0);
+        traverse_tree(a, tree, code, 1);
+    }
+    else {
+        a[get_letter_index(tree->symbol)].code = code;
+    }
+    return a;
+}
+
