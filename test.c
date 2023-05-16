@@ -327,6 +327,26 @@ void write_file(char* filename, uint8_t* C, Codes* a)
     }
     for(int i = 0; C[i] != '\0'; i++)
         fwrite(&C[i], 1, 1, file);
+    fclose(file);
+}
+
+void uncomp_file(char *filename)
+{
+    Codes a[26] = {0};
+    FILE* file = fopen(filename, "rb");
+    FILE* ufile = fopen("uncomp_file", "w");
+    for(int i = 0; i < 26; i++) {
+        fread(&a[i].code, 1, 1, file);
+        fread(&a[i].len, 1, 1, file);
+    }
+    uint8_t C[2048];
+    fread(C, 1, 1000, file);
+    uint8_t* T = DECODE_MSG(C, a);
+    for(int i = 0; T[i] != '\0'; i++) {
+        fwrite(&T[i], 1, 1, ufile);
+    }
+    fclose(file);
+    fclose(ufile);
 }
 
 int main(int argc, char *argv[])
@@ -338,8 +358,9 @@ int main(int argc, char *argv[])
     Codes a[26] = {0};
     traverse_tree(a, &h_tree, 0, 0);
     for(int i = 0; i < 26; i++) {
-        printf("a[%d].code = %x | len = %d\n", i, a[i].code, a[i].len);
+        printf("a[%c].code = %x | len = %d\n", get_letter(i), a[i].code, a[i].len);
     }
     uint8_t* C = ENCODE_MSG(uncompressed, a);
     write_file(argv[2], C, a);
+    uncomp_file(argv[2]);
 }
