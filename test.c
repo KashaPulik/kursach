@@ -233,21 +233,45 @@ Node HTREE(Queue* symbols)
     return heap_extract_min(h);
 }
 
-Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, _Bool key)
+// Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, _Bool key)
+// {
+//     if(tree->left && tree->right) {
+//         code = code << 1;
+//         if(key == 0)
+//             code = code | 0;
+//         else
+//             code = code | 1;
+//         Node* buf = tree->left;
+//         traverse_tree(a, buf, code, 0);
+//         buf = tree->right;
+//         traverse_tree(a, buf, code, 1);
+//     }
+//     else {
+//         a[get_letter_index(tree->symbol)].code = code;
+//     }
+//     return a;
+// }
+
+Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, uint8_t len)
 {
-    if(tree->left && tree->right) {
-        code = code << 1;
-        if(key == 0)
-            code = code | 0;
-        else
-            code = code | 1;
-        Node* buf = tree->left;
-        traverse_tree(a, buf, code, 0);
-        buf = tree->right;
-        traverse_tree(a, buf, code, 1);
+    uint8_t tmp_code;
+    uint8_t tmp_len;
+    if(tree->left) {
+        tmp_len = len + 1;
+        tmp_code = code;
+        tmp_code = tmp_code << 1;
+        traverse_tree(a, tree->left, tmp_code, tmp_len);
     }
-    else {
+    if(tree->right) {
+        tmp_len = len + 1;
+        tmp_code = code;
+        tmp_code = tmp_code << 1;
+        tmp_code = tmp_code | 1;
+        traverse_tree(a, tree->right, tmp_code, tmp_len);
+    }
+    if(tree->left == NULL && tree->right == NULL) {
         a[get_letter_index(tree->symbol)].code = code;
+        a[get_letter_index(tree->symbol)].len = len;
     }
     return a;
 }
@@ -309,8 +333,11 @@ int main(int argc, char *argv[])
     Queue symbols[26];
     get_freq(symbols, uncompressed);
     Node h_tree = HTREE(symbols);
-    Codes a[26];
+    Codes a[26] = {0};
     traverse_tree(a, &h_tree, 0, 0);
+    for(int i = 0; i < 26; i++) {
+        printf("a[%d].code = %x | len = %d\n", i, a[i].code, a[i].len);
+    }
     uint8_t* C = ENCODE_MSG(uncompressed, a);
     write_file(argv[2], C, a);
 }
