@@ -221,12 +221,14 @@ Heap* init_queue(Queue* symbols)
 Node HTREE(Queue* symbols)
 {
     Heap* h = init_queue(symbols);
-    Node* w1 = malloc(sizeof(Node));
-    Node* w2 = malloc(sizeof(Node));
+    Node* w1 = NULL;
+    Node* w2 = NULL;
     while(heap_nnodes(h) > 1) {
+        w1 = malloc(sizeof(Node));
         *w1 = heap_extract_min(h);
         if(w1->freq == 0)
             continue;
+        w2 = malloc(sizeof(Node));
         *w2 = heap_extract_min(h);
         heap_insert(h, w1->freq + w2->freq, 0, w1, w2);
     }
