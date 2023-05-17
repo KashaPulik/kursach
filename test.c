@@ -10,55 +10,19 @@ typedef struct codes {
     uint8_t len;
 } Codes;
 
-typedef struct tree {
-    uint64_t weight;
-    uint8_t symbol;
-    struct tree* left;
-    struct tree* right;
-} Tree;
-
 typedef struct queue {
     uint64_t weight;
     uint8_t symbol;
 } Queue;
 
-enum letters {
-    letter_a,
-    letter_b,
-    letter_c,
-    letter_d,
-    letter_e,
-    letter_f,
-    letter_g,
-    letter_h,
-    letter_i,
-    letter_j,
-    letter_k,
-    letter_l,
-    letter_m,
-    letter_n,
-    letter_o,
-    letter_p,
-    letter_q,
-    letter_r,
-    letter_s,
-    letter_t,
-    letter_u,
-    letter_v,
-    letter_w,
-    letter_x,
-    letter_y,
-    letter_z,
-};
-
-uint8_t get_letter_index(uint8_t T)
+uint8_t get_letter_index(uint8_t letter)
 {
-    return T - 97;
+    return letter - 97;
 }
 
-uint8_t get_letter(uint8_t s)
+uint8_t get_letter(uint8_t index)
 {
-    return s + 97;
+    return index + 97;
 }
 
 uint64_t setbits(uint8_t* C, uint64_t offs, uint8_t value, uint8_t value_len)
