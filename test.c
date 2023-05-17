@@ -137,10 +137,10 @@ _Bool empty_codes(Codes* tmp)
     return 1;
 }
 
-char* DECODE_MSG(char* bit_arr, Codes* a, uint8_t n_last_bits, size_t size_bit_arr)
+char* DECODE_MSG(char* bit_arr, Codes* a, uint8_t n_last_bits, size_t size_bit_arr, size_t message_size)
 {
     char letter[2] = {0};
-    char* T = malloc(2048);
+    char* T = malloc(message_size + 1);
     size_t n = size_bit_arr - 1;
     Codes tmp[127];
     copy_codes(tmp, a);
@@ -250,7 +250,7 @@ uint8_t* get_freq(uint8_t* symbols, char* message)
     return symbols;
 }
 
-void write_file(char* filename, uint8_t* C, Codes* a, uint64_t offs, size_t size_bit_arr)
+void write_file(char* filename, uint8_t* C, Codes* a, uint64_t offs, size_t size_bit_arr, size_t message_size)
 {
     FILE* file = fopen(filename, "wb");
     if(file == NULL) {
@@ -262,6 +262,7 @@ void write_file(char* filename, uint8_t* C, Codes* a, uint64_t offs, size_t size
         fwrite(&a[i].len, 1, 1, file);
     }
     uint8_t n_last_bits = offs % 8;
+    fwrite(&message_size, sizeof(size_t), 1, file);
     fwrite(&n_last_bits, 1, 1, file);
     fwrite(&size_bit_arr, sizeof(size_t), 1, file);
     for(int i = 0; i < size_bit_arr; i++)
@@ -278,6 +279,8 @@ void uncomp_file(char *filename)
         fread(&a[i].code, 1, 1, file);
         fread(&a[i].len, 1, 1, file);
     }
+    size_t message_size;
+    fread(&message_size, sizeof(size_t), 1, file);
     uint8_t n_last_bits;
     fread(&n_last_bits, 1, 1, file);
     size_t size_bit_arr;
@@ -285,7 +288,7 @@ void uncomp_file(char *filename)
     char C[fsize(filename) - 253];
     fread(C, 1, fsize(filename) - 254, file);
     C[fsize(filename) - 254] = '\0';
-    char* T = DECODE_MSG(C, a, n_last_bits, size_bit_arr);
+    char* T = DECODE_MSG(C, a, n_last_bits, size_bit_arr, message_size);
     for(int i = 0; T[i] != '\0'; i++) {
         fwrite(&T[i], 1, 1, ufile);
     }
@@ -296,6 +299,7 @@ void uncomp_file(char *filename)
 int main(int argc, char *argv[])
 {
     char* message = read_file(argv[1]);
+    size_t message_size = strlen(message);
     uint8_t symbols[127];
     get_freq(symbols, message);
     Node h_tree = HTREE(symbols);
@@ -307,6 +311,6 @@ int main(int argc, char *argv[])
     uint64_t offs;
     size_t size_bit_arr;
     uint8_t* C = ENCODE_MSG(message, a, &offs, &size_bit_arr);
-    write_file(argv[2], C, a, offs, size_bit_arr);
+    write_file(argv[2], C, a, offs, size_bit_arr, message_size);
     uncomp_file(argv[2]);
 }
