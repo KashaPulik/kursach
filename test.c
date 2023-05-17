@@ -53,7 +53,7 @@ size_t bit_arr_size(Codes* a, char* message)
     size_t count = 0;
     size_t size;
     for(int i = 0; message[i] != '\0'; i++)
-        count += a[get_letter_index(message[i])].len;
+        count += a[message[i]].len;
     size = count / 8;
     if(count % 8 > 0)
         size++;
@@ -69,8 +69,8 @@ uint8_t* ENCODE_MSG(char* message, Codes* a, uint64_t* offs, size_t* size_bit_ar
     uint8_t value; // Значение, которое записывается в битовый массив
     uint8_t value_len; // Длина значения в битах
     for (int i = 0; message[i] != '\0'; i++) { // Цикл для каждой буквы из сообщения
-        value = a[get_letter_index(message[i])].code;
-        value_len = a[get_letter_index(message[i])].len;
+        value = a[message[i]].code;
+        value_len = a[message[i]].len;
         tmp_offs = setbits(
                 bit_arr, tmp_offs, value, value_len); // Запись значения в битовый массив
     }
@@ -81,7 +81,7 @@ uint8_t* ENCODE_MSG(char* message, Codes* a, uint64_t* offs, size_t* size_bit_ar
 
 Codes* copy_codes(Codes* dest, Codes* src)
 {
-    for (int i = 0; i < 26; i++) {
+    for (int i = 1; i < 127; i++) {
         dest[i].code = src[i].code;
         dest[i].len = src[i].len;
     }
@@ -114,7 +114,7 @@ Codes* clear(Codes* a, uint8_t value, uint8_t value_len)
 {
     uint8_t tmp_code;
 
-    for (int i = 0; i < 26; i++) {
+    for (int i = 1; i < 127; i++) {
         tmp_code = a[i].code >> (a[i].len - value_len);
         if (tmp_code != value)
             a[i].len = 0;
@@ -131,7 +131,7 @@ _Bool find_code(Codes* tmp, uint8_t value, uint8_t value_len, uint8_t s)
 
 _Bool empty_codes(Codes* tmp)
 {
-    for (int i = 0; i < 26; i++)
+    for (int i = 1; i < 127; i++)
         if (tmp[i].len != 0)
             return 0;
     return 1;
@@ -142,7 +142,7 @@ char* DECODE_MSG(char* bit_arr, Codes* a, uint8_t n_last_bits, size_t size_bit_a
     char letter[2] = {0};
     char* T = malloc(2048);
     size_t n = size_bit_arr - 1;
-    Codes tmp[26];
+    Codes tmp[127];
     copy_codes(tmp, a);
     uint8_t value = 0;
     uint8_t value_len = 0;
@@ -150,9 +150,9 @@ char* DECODE_MSG(char* bit_arr, Codes* a, uint8_t n_last_bits, size_t size_bit_a
         value = (value << 1) | getbits(bit_arr, i, 1);
         value_len++;
         clear(tmp, value, value_len);
-        for (uint8_t s = 0; s < 26; s++) {
+        for (uint8_t s = 1; s < 127; s++) {
             if (find_code(tmp, value, value_len, s)) {
-                letter[0] = get_letter(s);
+                letter[0] = s;
                 T = strcat(T, letter);
                 copy_codes(tmp, a);
                 value = 0;
@@ -170,9 +170,9 @@ char* DECODE_MSG(char* bit_arr, Codes* a, uint8_t n_last_bits, size_t size_bit_a
 
 Heap* init_queue(uint8_t* symbols)
 {
-    Heap* h = heap_create(26);
-    for(int i = 0; i < 26; i++)
-        heap_insert(h, symbols[i], get_letter(i), NULL, NULL);
+    Heap* h = heap_create(127);
+    for(int i = 1; i < 127; i++)
+        heap_insert(h, symbols[i], i, NULL, NULL);
     return h;
 }
 
@@ -211,8 +211,8 @@ Codes* traverse_tree(Codes* a, Node* tree, uint8_t code, uint8_t len)
         traverse_tree(a, tree->right, tmp_code, tmp_len);
     }
     if(tree->left == NULL && tree->right == NULL) {
-        a[get_letter_index(tree->symbol)].code = code;
-        a[get_letter_index(tree->symbol)].len = len;
+        a[tree->symbol].code = code;
+        a[tree->symbol].len = len;
     }
     return a;
 }
@@ -242,10 +242,10 @@ char* read_file(char* filename)
 
 uint8_t* get_freq(uint8_t* symbols, char* message)
 {
-    for(int i = 0; i < 26; i++)
+    for(int i = 1; i < 127; i++)
         symbols[i] = 0;
     for(int i = 0; message[i] != '\0'; i++)
-        symbols[get_letter_index(message[i])]++;
+        symbols[message[i]]++;
     
     return symbols;
 }
@@ -257,7 +257,7 @@ void write_file(char* filename, uint8_t* C, Codes* a, uint64_t offs, size_t size
         printf("Не удалось открыть файл\n");
         exit(1);
     }
-    for(int i = 0; i < 26; i++) {
+    for(int i = 1; i < 127; i++) {
         fwrite(&a[i].code, 1, 1, file);
         fwrite(&a[i].len, 1, 1, file);
     }
@@ -271,10 +271,10 @@ void write_file(char* filename, uint8_t* C, Codes* a, uint64_t offs, size_t size
 
 void uncomp_file(char *filename)
 {
-    Codes a[26] = {0};
+    Codes a[127] = {0};
     FILE* file = fopen(filename, "rb");
     FILE* ufile = fopen("uncomp_file", "w");
-    for(int i = 0; i < 26; i++) {
+    for(int i = 1; i < 127; i++) {
         fread(&a[i].code, 1, 1, file);
         fread(&a[i].len, 1, 1, file);
     }
@@ -282,9 +282,9 @@ void uncomp_file(char *filename)
     fread(&n_last_bits, 1, 1, file);
     size_t size_bit_arr;
     fread(&size_bit_arr, sizeof(size_t), 1, file);
-    char C[fsize(filename) - 53];
-    fread(C, 1, fsize(filename) - 54, file);
-    C[fsize(filename) - 54] = '\0';
+    char C[fsize(filename) - 253];
+    fread(C, 1, fsize(filename) - 254, file);
+    C[fsize(filename) - 254] = '\0';
     char* T = DECODE_MSG(C, a, n_last_bits, size_bit_arr);
     for(int i = 0; T[i] != '\0'; i++) {
         fwrite(&T[i], 1, 1, ufile);
@@ -296,13 +296,13 @@ void uncomp_file(char *filename)
 int main(int argc, char *argv[])
 {
     char* message = read_file(argv[1]);
-    uint8_t symbols[26];
+    uint8_t symbols[127];
     get_freq(symbols, message);
     Node h_tree = HTREE(symbols);
-    Codes a[26] = {0};
+    Codes a[127] = {0};
     traverse_tree(a, &h_tree, 0, 0);
-    for(int i = 0; i < 26; i++) {
-        printf("a[%c].code = %x | len = %d\n", get_letter(i), a[i].code, a[i].len);
+    for(int i = 1; i < 127; i++) {
+        printf("a[%d].code = %x | len = %d\n", i, a[i].code, a[i].len);
     }
     uint64_t offs;
     size_t size_bit_arr;
