@@ -10,11 +10,6 @@ typedef struct codes {
     uint8_t len;
 } Codes;
 
-typedef struct queue {
-    uint64_t weight;
-    uint8_t symbol;
-} Queue;
-
 uint8_t get_letter_index(uint8_t letter)
 {
     return letter - 97;
@@ -53,29 +48,27 @@ uint64_t setbits(uint8_t* C, uint64_t offs, uint8_t value, uint8_t value_len)
     return offs + value_len;
 }
 
-size_t new_file_size(Codes* a, uint8_t* T)
+size_t bit_arr_size(Codes* a, char* message)
 {
     size_t count = 0;
-    while (*T != '\0') {
-        count += a[get_letter_index(*T)].len;
-        T++;
-    }
-    return count/8 + 61;
+    for(int i = 0; message[i] != '\0'; i++)
+        count += a[get_letter_index(message[i])].len;
+    return count/8 + 1;
 }
 
-uint8_t* ENCODE_MSG(uint8_t* T, Codes* a)
+uint8_t* ENCODE_MSG(char* message, Codes* a)
 {
     uint64_t offs = 0; // Смещение в битовом массиве
-    uint8_t* C = malloc(new_file_size(a, T)); // Битовый массив
+    uint8_t* bit_arr = malloc(bit_arr_size(a, message)); // Битовый массив
     uint8_t value; // Значение, которое записывается в битовый массив
     uint8_t value_len; // Длина значения в битах
-    for (int i = 0; T[i] != '\0'; i++) { // Цикл для каждой буквы из сообщения
-        value = a[get_letter_index(T[i])].code;
-        value_len = a[get_letter_index(T[i])].len;
+    for (int i = 0; message[i] != '\0'; i++) { // Цикл для каждой буквы из сообщения
+        value = a[get_letter_index(message[i])].code;
+        value_len = a[get_letter_index(message[i])].len;
         offs = setbits(
-                C, offs, value, value_len); // Запись значения в битовый массив
+                bit_arr, offs, value, value_len); // Запись значения в битовый массив
     }
-    return C;
+    return bit_arr;
 }
 
 Codes* copy_codes(Codes* tmp, Codes* src)
@@ -173,16 +166,15 @@ uint8_t* DECODE_MSG(uint8_t* C, Codes* a)
 //     return count;
 // }
 
-Heap* init_queue(Queue* symbols)
+Heap* init_queue(uint8_t* symbols)
 {
     Heap* h = heap_create(26);
-    for(int i = 0; i < 26; i++) {
-        heap_insert(h, symbols[i].weight, symbols[i].symbol, NULL, NULL);
-    }
+    for(int i = 0; i < 26; i++)
+        heap_insert(h, symbols[i], get_letter(i), NULL, NULL);
     return h;
 }
 
-Node HTREE(Queue* symbols)
+Node HTREE(uint8_t* symbols)
 {
     Heap* h = init_queue(symbols);
     Node* w1 = NULL;
@@ -251,7 +243,7 @@ off_t fsize(const char *filename) {
     return -1; 
 }
 
-uint8_t* read_file(char* filename)
+char* read_file(char* filename)
 {
     FILE* file = fopen(filename, "rb");
     if(file == NULL) {
@@ -259,21 +251,18 @@ uint8_t* read_file(char* filename)
         exit(1);
     }
     off_t filesize = fsize(filename);
-    uint8_t* buf = malloc(filesize + 1);
-    fread(buf, 1, filesize, file);
+    char* message = malloc(filesize + 1);
+    fread(message, 1, filesize, file);
     fclose(file);
-    return buf;
+    return message;
 }
 
-Queue* get_freq(Queue* symbols, uint8_t* uncompressed)
+uint8_t* get_freq(uint8_t* symbols, char* message)
 {
-    for(int i = 0; i < 26; i++) {
-        symbols[i].symbol = get_letter(i);
-        symbols[i].weight = 0;
-    }
-
-    for(int i = 0; uncompressed[i] != '\0'; i++)
-        symbols[get_letter_index(uncompressed[i])].weight++;
+    for(int i = 0; i < 26; i++)
+        symbols[i] = 0;
+    for(int i = 0; message[i] != '\0'; i++)
+        symbols[get_letter_index(message[i])]++;
     
     return symbols;
 }
@@ -315,16 +304,16 @@ void uncomp_file(char *filename)
 
 int main(int argc, char *argv[])
 {
-    uint8_t* uncompressed = read_file(argv[1]);
-    Queue symbols[26];
-    get_freq(symbols, uncompressed);
+    char* message = read_file(argv[1]);
+    uint8_t symbols[26];
+    get_freq(symbols, message);
     Node h_tree = HTREE(symbols);
     Codes a[26] = {0};
     traverse_tree(a, &h_tree, 0, 0);
     for(int i = 0; i < 26; i++) {
         printf("a[%c].code = %x | len = %d\n", get_letter(i), a[i].code, a[i].len);
     }
-    uint8_t* C = ENCODE_MSG(uncompressed, a);
+    uint8_t* C = ENCODE_MSG(message, a);
     write_file(argv[2], C, a);
     uncomp_file(argv[2]);
 }
