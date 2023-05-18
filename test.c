@@ -235,7 +235,7 @@ Heap* init_queue(uint8_t* symbols)
     return h;
 }
 
-Node HTREE(uint8_t* symbols)
+Node* HTREE(uint8_t* symbols)
 {
     Heap* h = init_queue(symbols);
     Node* w1 = NULL;
@@ -252,7 +252,7 @@ Node HTREE(uint8_t* symbols)
     Node* w = malloc(sizeof(Node));
     *w = heap_extract_min(h);
     // heap_free(h);
-    return *w;
+    return w;
 }
 
 void free_tree(Node* tree)
@@ -387,10 +387,10 @@ int main(int argc, char* argv[])
     size_t message_size = strlen(message);
     uint8_t symbols[127];
     get_freq(symbols, message);
-    Node h_tree = HTREE(symbols);
+    Node* h_tree = HTREE(symbols);
     Codes a[127] = {0};
-    traverse_tree(a, &h_tree, 0, 0);
-    free_tree(&h_tree);
+    traverse_tree(a, h_tree, 0, 0);
+    free_tree(h_tree);
     print_codes(a);
     uint64_t offs;
     size_t size_bit_arr;
