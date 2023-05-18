@@ -227,24 +227,27 @@ char* DECODE_MSG(
     return message;
 }
 
-Heap* init_queue(uint8_t* symbols)
+Heap* init_queue(uint8_t* symbols, Heap* h)
 {
-    Heap* h = heap_create(127);
+    // Heap* h = heap_create(126);
+    // Heap* h = heap_create();
     for (int i = 1; i < 127; i++)
         heap_insert(h, symbols[i], i, NULL, NULL);
     return h;
 }
 
-Node* HTREE(uint8_t* symbols)
+Node* HTREE(uint8_t* symbols, Heap* h)
 {
-    Heap* h = init_queue(symbols);
+    init_queue(symbols, h);
     Node* w1 = NULL;
     Node* w2 = NULL;
     while (heap_nnodes(h) > 1) {
         w1 = malloc(sizeof(Node));
         *w1 = heap_extract_min(h);
-        if (w1->freq == 0)
+        if (w1->freq == 0) {
+            free(w1);
             continue;
+        }
         w2 = malloc(sizeof(Node));
         *w2 = heap_extract_min(h);
         heap_insert(h, w1->freq + w2->freq, 0, w1, w2);
@@ -252,6 +255,8 @@ Node* HTREE(uint8_t* symbols)
     Node* w = malloc(sizeof(Node));
     *w = heap_extract_min(h);
     // heap_free(h);
+    // free(h->nodes);
+    // free(h);
     return w;
 }
 
@@ -284,6 +289,7 @@ Codes* traverse_tree(Codes* a, Node* tree, uint16_t code, uint8_t len)
     if (tree->left == NULL && tree->right == NULL) {
         a[tree->symbol].code = code;
         a[tree->symbol].len = len;
+        // free(tree);
     }
     return a;
 }
@@ -371,30 +377,33 @@ void uncomp_file(char* filename)
     // fread(C, 1, 2048, file);
     // C[fsize(filename) - 395] = '\0';
     print_codes(a);
-    char* message = DECODE_MSG(bit_arr, a, n_last_bits, size_bit_arr, message_size);
+    char* amessage = DECODE_MSG(bit_arr, a, n_last_bits, size_bit_arr, message_size);
     // for (int i = 0; T[i] != '\0'; i++) {
         // fwrite(&T[i], 1, 1, ufile);
     // }
     fclose(file);
-    fwrite(message, 1, message_size, ufile);
-    free(message);
+    fwrite(amessage, 1, message_size, ufile);
+    free(amessage);
     fclose(ufile);
 }
 
 int main(int argc, char* argv[])
 {
-    char* message = read_file(argv[1]);
-    size_t message_size = strlen(message);
-    uint8_t symbols[127];
-    get_freq(symbols, message);
-    Node* h_tree = HTREE(symbols);
-    Codes a[127] = {0};
-    traverse_tree(a, h_tree, 0, 0);
-    free_tree(h_tree);
-    print_codes(a);
-    uint64_t offs;
-    size_t size_bit_arr;
-    uint8_t* C = ENCODE_MSG(message, a, &offs, &size_bit_arr);
-    write_file(argv[2], C, a, offs, size_bit_arr, message_size);
+    // char* message = read_file(argv[1]);
+    // size_t message_size = strlen(message);
+    // uint8_t symbols[127];
+    // get_freq(symbols, message);
+    // Heap* h = heap_create();
+    // Node* h_tree = HTREE(symbols, h);
+    // Codes a[127] = {0};
+    // traverse_tree(a, h_tree, 0, 0);
+    // free(h);
+    // free_tree(h_tree);
+    // // print_codes(a);
+    // uint64_t offs;
+    // size_t size_bit_arr;
+    // uint8_t* C = ENCODE_MSG(message, a, &offs, &size_bit_arr);
+    // free(message);
+    // write_file(argv[2], C, a, offs, size_bit_arr, message_size);
     uncomp_file(argv[2]);
 }

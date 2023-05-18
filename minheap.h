@@ -14,10 +14,12 @@ typedef struct heapnode {
 typedef struct heap {
     int maxsize;
     int nnodes;
-    struct heapnode* nodes;
+    // struct heapnode* nodes;
+    struct heapnode nodes[127];
 } Heap;
 
-Heap* heap_create(int maxsize);
+// Heap* heap_create(int maxsize);
+Heap* heap_create();
 int heap_nnodes(Heap* h);
 void heap_free(Heap* h);
 void heap_swap(struct heapnode* a, struct heapnode* b);

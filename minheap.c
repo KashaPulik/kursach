@@ -3,14 +3,16 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-Heap* heap_create(int maxsize)
+// Heap* heap_create(int maxsize)
+Heap* heap_create()
 {
     Heap* h;
     h = malloc(sizeof(*h));
     if (h != NULL) {
-        h->maxsize = maxsize;
+        // h->maxsize = maxsize;
+        h->maxsize = 126;
         h->nnodes = 0;
-        h->nodes = malloc(sizeof(*h->nodes) * (maxsize + 1));
+        // h->nodes = malloc(sizeof(*h->nodes) * (maxsize + 1));
         if (h->nodes == NULL) {
             free(h);
             return NULL;
