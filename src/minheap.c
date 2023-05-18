@@ -1,18 +1,14 @@
 #include "./minheap.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
-// Heap* heap_create(int maxsize)
 Heap* heap_create()
 {
     Heap* h;
     h = malloc(sizeof(*h));
     if (h != NULL) {
-        // h->maxsize = maxsize;
-        h->maxsize = 126;
         h->nnodes = 0;
-        // h->nodes = malloc(sizeof(*h->nodes) * (maxsize + 1));
         if (h->nodes == NULL) {
             free(h);
             return NULL;
@@ -21,36 +17,25 @@ Heap* heap_create()
     return h;
 }
 
-int heap_nnodes(Heap* h)
+uint8_t heap_nnodes(Heap* h)
 {
     return h->nnodes;
 }
 
 void heap_free(Heap* h)
 {
-    free(h->nodes);
     free(h);
 }
 
 void heap_swap(struct heapnode* a, struct heapnode* b)
 {
-    struct heapnode temp = *a;
+    struct heapnode tmp = *a;
     *a = *b;
-    *b = temp;
-}
-
-struct heapnode* heap_min(Heap* h)
-{
-    if (h->nnodes == 0)
-        return NULL;
-    return &h->nodes[1];
+    *b = tmp;
 }
 
 int heap_insert(Heap* h, uint64_t freq, uint8_t symbol, Node* left, Node* right)
 {
-    if (h->nnodes >= h->maxsize)
-        return -1;
-
     h->nnodes++;
     h->nodes[h->nnodes].freq = freq;
     h->nodes[h->nnodes].symbol = symbol;
@@ -95,15 +80,9 @@ struct heapnode heap_extract_min(Heap* h)
     return minnode;
 }
 
-int heap_decrease_freq(Heap* h, int index, int newfreq)
+Heap* init_heap(uint64_t* symbols, Heap* h)
 {
-    if (h->nodes[index].freq <= newfreq)
-        return -1;
-
-    h->nodes[index].freq = newfreq;
-    while (index > 1 && h->nodes[index].freq < h->nodes[index / 2].freq) {
-        heap_swap(&h->nodes[index], &h->nodes[index / 2]);
-        index /= 2;
-    }
-    return index;
+    for (int i = 1; i < 127; i++)
+        heap_insert(h, symbols[i], i, NULL, NULL);
+    return h;
 }

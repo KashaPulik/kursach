@@ -12,19 +12,13 @@ typedef struct heapnode {
 } Node;
 
 typedef struct heap {
-    int maxsize;
-    int nnodes;
-    // struct heapnode* nodes;
+    uint8_t nnodes;
     struct heapnode nodes[127];
 } Heap;
 
-// Heap* heap_create(int maxsize);
 Heap* heap_create();
-int heap_nnodes(Heap* h);
+uint8_t heap_nnodes(Heap* h);
 void heap_free(Heap* h);
-void heap_swap(struct heapnode* a, struct heapnode* b);
-struct heapnode* heap_min(Heap* h);
 int heap_insert(Heap* h, uint64_t freq, uint8_t symbol, Node* left, Node* right);
-void heap_heapify(Heap* h, int index);
 struct heapnode heap_extract_min(Heap* h);
-int heap_decrease_key(Heap* h, int index, int newkey);
+Heap* init_heap(uint64_t* symbols, Heap* h);
