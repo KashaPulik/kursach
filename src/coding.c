@@ -57,7 +57,7 @@ char* DECODE_MSG(
         }
         if (empty_codes(tmp)) {
             printf("Ошибка декодирования, такого кода не существует!\n");
-            exit(1);
+            exit(-1);
         }
     }
     return message;

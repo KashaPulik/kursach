@@ -6,8 +6,8 @@
 uint64_t
 setbits(uint8_t* bit_arr, uint64_t offs, uint16_t value, uint8_t value_len)
 {
-    uint32_t byte_n = offs / 8; // Номер байта с которого начнётся запись
-    uint8_t byte_offs = offs % 8; // Смещение внутри этого байта
+    uint64_t byte_n = offs / 8;
+    uint8_t byte_offs = offs % 8;
     value = value << (16 - value_len);
     for (int i = value_len; i > 0; i--) {
         bit_arr[byte_n]
@@ -24,9 +24,9 @@ setbits(uint8_t* bit_arr, uint64_t offs, uint16_t value, uint8_t value_len)
 
 uint8_t getbit(uint8_t* bit_arr, uint64_t offs)
 {
-    uint32_t byte_n
-            = offs / 8; // Номер байта в который будет происходить запись
-    uint8_t byte_offs = offs % 8; // Смещение внутри этого байта
+    uint64_t byte_n
+            = offs / 8;
+    uint8_t byte_offs = offs % 8;
     uint8_t mask = 0x80 >> byte_offs;
     if ((bit_arr[byte_n] & mask) == 0)
         return 0;

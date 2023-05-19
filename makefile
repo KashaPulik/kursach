@@ -1,6 +1,6 @@
 APP_NAME = sfcompress
 
-CFLAGS = -Wall -Wextra -Werror -O0 -g
+CFLAGS = -Wall -Wextra -Werror
 CPPFLAGS = -I src -MMD
 CC = gcc
 

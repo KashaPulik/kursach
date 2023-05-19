@@ -1,7 +1,5 @@
 #pragma once
 
-// #include <codes.h>
-
 uint8_t*
 ENCODE_MSG(char* message, Codes* a, uint64_t* offs, size_t* size_bit_arr);
 char* DECODE_MSG(
